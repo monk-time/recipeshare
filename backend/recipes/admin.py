@@ -14,7 +14,7 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'color', 'slug')
     list_editable = ('name', 'color', 'slug')
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [RecipeInline]
+    inlines = (RecipeInline,)
 
 
 @admin.register(Ingredient)
@@ -41,11 +41,12 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'author')
+    list_display = ('pk', 'name', 'author', 'favorite_count')
     list_editable = ('name',)
     list_filter = ('author', 'name', 'tags')
-    inlines = [RecipeIngredientInline]
+    inlines = (RecipeIngredientInline,)
+    readonly_fields = ('favorite_count',)
 
-
-# TODO: На странице рецепта вывести общее число
-# добавлений этого рецепта в избранное.
+    @admin.display(description='Добавления в избранное')
+    def favorite_count(self, instance):
+        return instance.favorited_by.count()
