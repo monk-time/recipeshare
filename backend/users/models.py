@@ -12,6 +12,8 @@ MAX_LENGTH_PASSWORD = 150
 
 
 class User(AbstractUser):
+    """Модель пользователя."""
+
     email = models.EmailField(
         'Адрес электронной почты',
         max_length=MAX_LENGTH_EMAIL,

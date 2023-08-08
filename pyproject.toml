@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 79
+skip-string-normalization = true
+extend-exclude = 'tests|migrations'
+
+[tool.isort]
+profile = "black"
+line_length = 79
+src_paths = ["backend"]
+extend_skip = ["tests", "migrations"]
