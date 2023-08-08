@@ -93,6 +93,7 @@ class Recipe(models.Model):
         Tag,
         verbose_name='Список тегов',
         related_name='recipes',
+        blank=True,
     )
     ingredients = models.ManyToManyField(
         Ingredient,
@@ -104,13 +105,15 @@ class Recipe(models.Model):
         User,
         verbose_name='В избранном у пользователей',
         related_name='favorited',
-        db_table='favorited',
+        db_table='recipes_favorited',
+        blank=True,
     )
     in_shopping_cart = models.ManyToManyField(
         User,
         verbose_name='В корзине у пользователей',
         related_name='shopping_cart',
-        db_table='shopping_cart',
+        db_table='recipes_shopping_cart',
+        blank=True,
     )
 
     class Meta:
@@ -123,14 +126,25 @@ class Recipe(models.Model):
 
 
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    recipe = models.ForeignKey(
+        Recipe,
+        verbose_name='Рецепт',
+        on_delete=models.CASCADE,
+    )
+    ingredient = models.ForeignKey(
+        Ingredient,
+        verbose_name='Ингредиент',
+        on_delete=models.CASCADE,
+    )
     amount = models.PositiveIntegerField(
         verbose_name='Количество',
         validators=[MinValueValidator(1)],
     )
 
     class Meta:
+        ordering = ('ingredient',)
+        verbose_name = 'Ингредиент к рецепту'
+        verbose_name_plural = 'Ингредиенты к рецептам'
         constraints = [
             models.UniqueConstraint(
                 name='unique_recipe_ingredient',

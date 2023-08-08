@@ -1,6 +1,12 @@
 from django.contrib import admin
+from django.forms import BaseInlineFormSet, ValidationError
 
-from .models import Ingredient, Recipe, Tag
+from .models import Ingredient, Recipe, RecipeIngredient, Tag
+
+
+class RecipeInline(admin.TabularInline):
+    model = Recipe.tags.through
+    extra = 1
 
 
 @admin.register(Tag)
@@ -8,6 +14,7 @@ class TagAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'color', 'slug')
     list_editable = ('name', 'color', 'slug')
     prepopulated_fields = {'slug': ('name',)}
+    inlines = [RecipeInline]
 
 
 @admin.register(Ingredient)
@@ -17,8 +24,28 @@ class IngredientAdmin(admin.ModelAdmin):
     list_filter = ('name',)
 
 
+class RecipeIngredientInlineFormset(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+        if not any(self.errors) and not any(
+            obj and not obj['DELETE'] for obj in self.cleaned_data
+        ):
+            raise ValidationError('Укажите хотя бы один ингредиент')
+
+
+class RecipeIngredientInline(admin.TabularInline):
+    model = RecipeIngredient
+    formset = RecipeIngredientInlineFormset
+    extra = 1
+
+
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'author')
     list_editable = ('name',)
     list_filter = ('author', 'name', 'tags')
+    inlines = [RecipeIngredientInline]
+
+
+# TODO: На странице рецепта вывести общее число
+# добавлений этого рецепта в избранное.
