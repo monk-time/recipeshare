@@ -1,0 +1,8 @@
+id,name,color,slug
+1,Бульоны и супы,#f5e042,soups
+2,Горячие блюда,#ff0000,hot
+3,Салаты,#32a852,salads
+4,Закуски,#6b72ff,appetizers
+5,Соусы,#fdff6b,sauces
+6,Выпечка,#914604,baked
+7,Десерты,#ff00bf,desserts

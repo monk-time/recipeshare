@@ -1,0 +1,6 @@
+id,username,email,first_name,last_name,password
+100,cook_master,cook_master@a.com,Вася,Пупкин,qwerty
+101,apprentice,apprentice@a.com,Петя,Иванов,qwerty
+102,gourmet,gourmet@a.com,Маша,Петрова,qwerty
+103,novice,novice@a.com,Даша,Федорова,qwerty
+104,foodie,foodie@a.com,Ваня,Пупкин,qwerty

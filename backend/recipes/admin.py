@@ -22,6 +22,7 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit')
     list_editable = ('name', 'measurement_unit')
     list_filter = ('name',)
+    search_fields = ('name',)
 
 
 class RecipeIngredientInlineFormset(BaseInlineFormSet):
