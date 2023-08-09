@@ -1,6 +1,7 @@
 import csv
 import sys
 from dataclasses import dataclass
+from typing import Callable
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -16,11 +17,15 @@ BASE_DIR = settings.DATA_ROOT
 class CSVModel:
     filename: str
     model: Model
+    creator: Callable[[csv.DictReader], None] | None = None
 
     def load(self):
         try:
             with open(BASE_DIR / self.filename, encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
+                if self.creator:
+                    self.creator(reader)
+                    return
                 self.model.objects.bulk_create(  # type: ignore
                     self.model(**row) for row in reader  # type: ignore
                 )
@@ -28,8 +33,17 @@ class CSVModel:
             raise CommandError(f'File {self.filename} not found')
 
 
+def create_user(reader: csv.DictReader):
+    for row in reader:
+        User.objects.create_user(**row)  # type: ignore
+
+
 CSV_MODELS = (
-    CSVModel(filename='users.csv', model=User),  # type: ignore
+    CSVModel(
+        filename='users.csv',
+        model=User,  # type: ignore
+        creator=create_user,
+    ),
     CSVModel(filename='follow.csv', model=Follow),  # type: ignore
     CSVModel(filename='tags.csv', model=Tag),  # type: ignore
     CSVModel(filename='ingredients.csv', model=Ingredient),  # type: ignore

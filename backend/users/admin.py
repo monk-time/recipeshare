@@ -1,13 +1,16 @@
 from django.contrib import admin
-
+from django.contrib.auth.admin import UserAdmin
 from .models import Follow, User
 
 
 @admin.register(User)
-class UserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(UserAdmin):
     list_display = ('email', 'username', 'first_name', 'last_name')
     list_display_links = ('email', 'username')
     list_filter = ('email', 'username')
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        (None, {'fields': ['email', 'first_name', 'last_name']}),
+    )
 
 
 @admin.register(Follow)
