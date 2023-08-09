@@ -1,8 +1,12 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from rest_framework import status
 from rest_framework.decorators import action
+from rest_framework.serializers import ValidationError
 from rest_framework.response import Response
+
+from users.models import Follow
 
 from .serializers import UserFollowSerializer
 
@@ -17,10 +21,8 @@ class CustomUserViewSet(UserViewSet):
 
     @action(detail=False, serializer_class=UserFollowSerializer)
     def subscriptions(self, request):
-        followed_users = (
-            User.objects.filter(following__follower=self.request.user)
-            .annotate(recipes_count=Count('recipes'))
-            .order_by('id')
+        followed_users = User.objects.filter(
+            following__follower=self.request.user
         )
 
         page = self.paginate_queryset(followed_users)
@@ -30,3 +32,35 @@ class CustomUserViewSet(UserViewSet):
 
         serializer = self.get_serializer(followed_users, many=True)
         return Response(serializer.data)
+
+    @action(
+        detail=True,
+        methods=['post'],
+        serializer_class=UserFollowSerializer,
+    )
+    def subscribe(self, request, id):
+        follower = request.user
+        following = get_object_or_404(User, pk=id)
+
+        if Follow.objects.filter(
+            follower=follower, following=following
+        ).exists():
+            raise ValidationError('Эта подписка уже существует.')
+        if follower == following:
+            raise ValidationError('Нельзя подписаться на самого себя.')
+
+        Follow.objects.create(follower=follower, following=following)
+
+        serializer = self.get_serializer(following)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @subscribe.mapping.delete
+    def delete_subscribe(self, request, id):
+        follow = Follow.objects.filter(
+            follower=request.user,
+            following=get_object_or_404(User, pk=id),
+        )
+        if not follow.exists():
+            raise ValidationError('Подписки не существует.')
+        follow.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
