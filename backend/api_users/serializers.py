@@ -1,14 +1,13 @@
 from django.contrib.auth import get_user_model
-from djoser.serializers import UserCreateSerializer, UserSerializer
+from djoser import serializers as djoser_serializers
 from rest_framework import serializers
 
-from api.serializers import RecipeMiniSerializer
 from users.models import Follow
 
 User = get_user_model()
 
 
-class CustomUserCreateSerializer(UserCreateSerializer):
+class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
     class Meta:
         model = User
         fields = (
@@ -22,7 +21,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         read_only_fields = ('id',)
 
 
-class CustomUserSerializer(UserSerializer):
+class UserSerializer(djoser_serializers.UserSerializer):
     is_subscribed = serializers.SerializerMethodField()
 
     class Meta:
@@ -44,27 +43,3 @@ class CustomUserSerializer(UserSerializer):
                 follower=current_user, following=obj
             ).exists()
         )
-
-
-class UserFollowSerializer(CustomUserSerializer):
-    recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
-
-    class Meta:
-        model = User
-        fields = CustomUserSerializer.Meta.fields + (
-            'recipes',
-            'recipes_count',
-        )
-
-    def get_recipes(self, obj):
-        request = self.context['request']
-        limit = int(request.query_params.get('recipes_limit', 0))
-        queryset = obj.recipes.all()
-        if limit > 0:
-            queryset = queryset[:limit]
-        serializer = RecipeMiniSerializer(queryset, many=True, read_only=True)
-        return serializer.data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()

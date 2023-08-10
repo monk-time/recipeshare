@@ -12,7 +12,7 @@ class IngredientFilter(filters.FilterSet):
         fields = ('name',)
 
     def name_startswith_or_anywhere(self, queryset, name, value):
-        queryset = (
+        return (
             queryset.filter(name__icontains=value)
             .annotate(
                 match_ordering=Case(
@@ -22,5 +22,3 @@ class IngredientFilter(filters.FilterSet):
             )
             .order_by('-match_ordering', 'name')
         )
-        print(queryset.query)
-        return queryset

@@ -1,19 +1,18 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
-from djoser.views import UserViewSet
+from djoser import views
 from rest_framework import status
 from rest_framework.decorators import action
-from rest_framework.serializers import ValidationError
 from rest_framework.response import Response
+from rest_framework.serializers import ValidationError
 
+from api.serializers import UserFollowSerializer
 from users.models import Follow
-
-from .serializers import UserFollowSerializer
 
 User = get_user_model()
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(views.UserViewSet):
     http_method_names = ['get', 'post', 'delete']
 
     def destroy(self, request, *args, **kwargs):
