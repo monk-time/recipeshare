@@ -54,7 +54,7 @@ class UserViewSet(views.UserViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @subscribe.mapping.delete
-    def delete_subscribe(self, request, id):
+    def subscribe_delete(self, request, id):
         follow = Follow.objects.filter(
             follower=request.user,
             following=get_object_or_404(User, pk=id),
