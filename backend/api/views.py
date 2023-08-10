@@ -64,6 +64,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def perform_create(self, serializer):
+        serializer.save(author=self.request.user)
+
     shopping_cart = generate_action(
         model=Recipe,
         serializer_class=RecipeMiniSerializer,
