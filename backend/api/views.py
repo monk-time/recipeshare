@@ -1,10 +1,6 @@
-from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
-from rest_framework.decorators import action
+from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.serializers import ValidationError
 
 from recipes.models import Ingredient, Recipe, Tag
 
@@ -17,6 +13,7 @@ from .serializers import (
     RecipeWriteSerializer,
     TagSerializer,
 )
+from .utils import generate_action
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -67,48 +64,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         return queryset
 
-    @action(
-        methods=['post'],
-        detail=True,
+    shopping_cart = generate_action(
+        model=Recipe,
         serializer_class=RecipeMiniSerializer,
+        url='shopping_cart',
+        m2m_field_name='in_shopping_cart',
+        error_texts={
+            'POST': 'Рецепт уже есть в списке покупок.',
+            'DELETE': 'Рецепт отсутствует в списке покупок.',
+        },
     )
-    def shopping_cart(self, request, pk):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if recipe.in_shopping_cart.contains(user):
-            raise ValidationError('Рецепт уже есть в списке покупок.')
-        recipe.in_shopping_cart.add(user)
-        serializer = self.serializer_class(recipe)  # type: ignore
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @shopping_cart.mapping.delete
-    def shopping_cart_delete(self, request, pk):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if not recipe.in_shopping_cart.contains(user):
-            raise ValidationError('Рецепт отсутствует в списке покупок.')
-        recipe.in_shopping_cart.remove(user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @action(
-        methods=['post'],
-        detail=True,
+    favorite = generate_action(
+        model=Recipe,
         serializer_class=RecipeMiniSerializer,
+        url='favorite',
+        m2m_field_name='favorited_by',
+        error_texts={
+            'POST': 'Рецепт уже есть в избранном.',
+            'DELETE': 'Рецепт отсутствует в избранном.',
+        },
     )
-    def favorite(self, request, pk):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if recipe.favorited_by.contains(user):
-            raise ValidationError('Рецепт уже есть в избранном.')
-        recipe.favorited_by.add(user)
-        serializer = self.serializer_class(recipe)  # type: ignore
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @favorite.mapping.delete
-    def favorite_delete(self, request, pk):
-        user = request.user
-        recipe = get_object_or_404(Recipe, pk=pk)
-        if not recipe.favorited_by.contains(user):
-            raise ValidationError('Рецепт отсутствует в избранном.')
-        recipe.favorited_by.remove(user)
-        return Response(status=status.HTTP_204_NO_CONTENT)
