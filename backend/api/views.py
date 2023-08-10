@@ -9,6 +9,7 @@ from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     IngredientSerializer,
     RecipeReadSerializer,
+    RecipeWriteSerializer,
     TagSerializer,
 )
 
@@ -31,9 +32,13 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all()
-    serializer_class = RecipeReadSerializer
     permission_classes = (IsAuthorOrReadOnly,)
     http_method_names = ['get', 'post', 'patch', 'delete']
+
+    def get_serializer_class(self):
+        if self.request.method in ('POST', 'PATCH'):
+            return RecipeWriteSerializer
+        return RecipeReadSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
