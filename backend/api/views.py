@@ -1,6 +1,9 @@
+from django.db.models import Sum
+from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
-from rest_framework.permissions import AllowAny
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from recipes.models import Ingredient, Recipe, Tag
 
@@ -88,3 +91,27 @@ class RecipeViewSet(viewsets.ModelViewSet):
             'DELETE': 'Рецепт отсутствует в избранном.',
         },
     )
+
+    REPORT_FILENAME = 'ingredients.txt'
+    REPORT_TEMPLATE = '{name} ({measurement_unit}) — {total_amount}\n'
+
+    @action(detail=False, permission_classes=(IsAuthenticated,))
+    def download_shopping_cart(self, request):
+        ingredients_to_buy = Ingredient.objects.filter(
+            recipes__in_shopping_cart=request.user
+        ).annotate(total_amount=Sum('recipeingredient__amount'))
+
+        report_lines = (
+            self.REPORT_TEMPLATE.format(**ingr.__dict__)
+            for ingr in ingredients_to_buy
+        )
+
+        return HttpResponse(
+            report_lines,
+            content_type='text/plain',
+            headers={
+                'Content-Disposition': (
+                    f'attachment; filename={self.REPORT_FILENAME}'
+                ),
+            },
+        )
