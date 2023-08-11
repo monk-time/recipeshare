@@ -63,7 +63,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         tags = query_params.getlist('tags')
         if tags:
-            queryset = queryset.filter(tags__slug__in=tags)
+            queryset = queryset.filter(tags__slug__in=tags).distinct()
 
         return queryset
 
@@ -111,7 +111,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             content_type='text/plain',
             headers={
                 'Content-Disposition': (
-                    f'attachment; filename={self.REPORT_FILENAME}'
+                    f'attachment; filename="{self.REPORT_FILENAME}"'
                 ),
             },
         )

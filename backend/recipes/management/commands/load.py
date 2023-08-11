@@ -1,16 +1,21 @@
 import csv
 import sys
 from dataclasses import dataclass
+from io import StringIO
+from pathlib import Path
 from typing import Callable
 
+from django.apps import apps
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
+from django.db import connection
 from django.db.models import Model
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from users.models import Follow, User
 
-BASE_DIR = settings.DATA_ROOT
+DATA_DIR = Path(settings.DATA_ROOT)
 
 
 @dataclass
@@ -21,7 +26,7 @@ class CSVModel:
 
     def load(self):
         try:
-            with open(BASE_DIR / self.filename, encoding='utf-8') as csvfile:
+            with open(DATA_DIR / self.filename, encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
                 if self.creator:
                     self.creator(reader)
@@ -79,3 +84,15 @@ class Command(BaseCommand):
             )
             csv_model.load()
             sys.stdout.write(self.style.SUCCESS(' OK\n'))
+
+        # Manually creating db entries with fixed id causes PostgreSQL
+        # to get out of sync with ids for new entries.
+        # One solution is to reset sequence manually
+        # source: https://stackoverflow.com/q/43663588/6270692
+        commands = StringIO()
+        for app in apps.get_app_configs():
+            call_command(
+                'sqlsequencereset', app.label, stdout=commands, no_color=True
+            )
+        with connection.cursor() as cursor:
+            cursor.execute(commands.getvalue())

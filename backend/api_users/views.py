@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import F, Max
 from django.shortcuts import get_object_or_404
 from djoser import views
 from rest_framework import status
@@ -20,8 +21,10 @@ class UserViewSet(views.UserViewSet):
 
     @action(detail=False, serializer_class=UserFollowSerializer)
     def subscriptions(self, request):
-        followed_users = User.objects.filter(
-            following__follower=self.request.user
+        followed_users = (
+            User.objects.filter(following__follower=self.request.user)
+            .annotate(last_recipe_date=Max('recipes__pub_date'))
+            .order_by(F('last_recipe_date').desc(nulls_last=True))
         )
 
         page = self.paginate_queryset(followed_users)
