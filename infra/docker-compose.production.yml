@@ -12,16 +12,16 @@ services:
     volumes:
       - pg_data:/var/lib/postgresql/data
   backend:
-    build: ../backend
+    image: monktime/recipeshare_backend
     env_file: .env
     depends_on:
       - db
     volumes:
       - static:/backend_static
       - media:/backend_media
-      - ../data/:/backend_data
+      - ./data/:/backend_data
   frontend:
-    build: ../frontend
+    image: monktime/recipeshare_frontend
     volumes:
       - static:/app/result_build
   nginx:
@@ -32,6 +32,6 @@ services:
       - backend
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
-      - ../docs/:/static/api/docs
+      - ./docs/:/static/api/docs
       - static:/static
       - media:/media
