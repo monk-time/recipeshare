@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -5,31 +6,24 @@ from users.models import User
 
 from .validators import HEXColorValidator
 
-MAX_LENGTH_TAG_NAME = 200
-MAX_LENGTH_TAG_COLOR = 7
-MAX_LENGTH_TAG_SLUG = 200
-MAX_LENGTH_INGREDIENT_NAME = 200
-MAX_LENGTH_INGREDIENT_UNIT = 200
-MAX_LENGTH_RECIPE_NAME = 200
-
 
 class Tag(models.Model):
     """Модель тегов рецептов."""
 
     name = models.CharField(
         verbose_name='Название',
-        max_length=MAX_LENGTH_TAG_NAME,
+        max_length=settings.MAX_LENGTH_TAG_NAME,
         unique=True,
     )
     color = models.CharField(
         verbose_name='Цвет в HEX',
-        max_length=MAX_LENGTH_TAG_COLOR,
+        max_length=settings.MAX_LENGTH_TAG_COLOR,
         unique=True,
         validators=[HEXColorValidator()],
     )
     slug = models.SlugField(
         verbose_name='Уникальный слаг',
-        max_length=MAX_LENGTH_TAG_SLUG,
+        max_length=settings.MAX_LENGTH_TAG_SLUG,
         unique=True,
     )
 
@@ -47,15 +41,15 @@ class Ingredient(models.Model):
 
     name = models.CharField(
         verbose_name='Название',
-        max_length=MAX_LENGTH_INGREDIENT_NAME,
+        max_length=settings.MAX_LENGTH_INGREDIENT_NAME,
     )
     measurement_unit = models.CharField(
         verbose_name='Единица измерения',
-        max_length=MAX_LENGTH_INGREDIENT_UNIT,
+        max_length=settings.MAX_LENGTH_INGREDIENT_UNIT,
     )
 
     class Meta:
-        ordering = ('id',)
+        ordering = ('name',)
         verbose_name = 'Ингредиент'
         verbose_name_plural = 'Ингредиенты'
 
@@ -68,7 +62,7 @@ class Recipe(models.Model):
 
     name = models.CharField(
         verbose_name='Название',
-        max_length=MAX_LENGTH_RECIPE_NAME,
+        max_length=settings.MAX_LENGTH_RECIPE_NAME,
     )
     text = models.TextField('Описание')
     author = models.ForeignKey(
@@ -79,7 +73,7 @@ class Recipe(models.Model):
     )
     image = models.ImageField(
         verbose_name='Картинка',
-        upload_to='recipes/',
+        upload_to=settings.UPLOAD_URL,
     )
     cooking_time = models.PositiveIntegerField(
         verbose_name='Время приготовления (в минутах)',

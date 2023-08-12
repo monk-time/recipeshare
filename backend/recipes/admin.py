@@ -6,7 +6,7 @@ from .models import Ingredient, Recipe, RecipeIngredient, Tag
 
 class RecipeInline(admin.TabularInline):
     model = Recipe.tags.through
-    extra = 1
+    extra = 0
 
 
 @admin.register(Tag)
@@ -21,8 +21,8 @@ class TagAdmin(admin.ModelAdmin):
 class IngredientAdmin(admin.ModelAdmin):
     list_display = ('pk', 'name', 'measurement_unit')
     list_editable = ('name', 'measurement_unit')
-    list_filter = ('name',)
     search_fields = ('name',)
+    search_help_text = 'Поиск по имени ингредиента'
 
 
 class RecipeIngredientInlineFormset(BaseInlineFormSet):
@@ -42,12 +42,26 @@ class RecipeIngredientInline(admin.TabularInline):
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('pk', 'name', 'author', 'favorite_count')
+    list_display = (
+        'pk',
+        'name',
+        'author',
+        'favorite_count',
+        'list_ingredients',
+    )
     list_editable = ('name',)
-    list_filter = ('author', 'name', 'tags')
+    list_filter = ('tags',)
+    search_fields = ('author__username', 'name')
+    search_help_text = 'Поиск по юзернейму автора или имени рецепта'
     inlines = (RecipeIngredientInline,)
-    readonly_fields = ('favorite_count',)
+    readonly_fields = ('favorite_count', 'list_ingredients')
 
     @admin.display(description='Добавления в избранное')
-    def favorite_count(self, instance):
-        return instance.favorited_by.count()
+    def favorite_count(self, recipe):
+        return recipe.favorited_by.count()
+
+    @admin.display(description='Ингредиенты')
+    def list_ingredients(self, recipe):
+        names = recipe.ingredients.values_list('name', flat=True)
+        print(names)
+        return '; '.join(names)

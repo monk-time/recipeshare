@@ -11,7 +11,8 @@ User = get_user_model()
 class CustomUserAdmin(UserAdmin):
     list_display = ('email', 'username', 'first_name', 'last_name')
     list_display_links = ('email', 'username')
-    list_filter = ('email', 'username')
+    search_fields = ('email', 'username')
+    search_help_text = 'Поиск по юзернейму или адресу электронной почты'
     add_fieldsets = UserAdmin.add_fieldsets + (
         (None, {'fields': ['email', 'first_name', 'last_name']}),
     )
