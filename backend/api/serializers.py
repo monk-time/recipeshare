@@ -72,6 +72,7 @@ class RecipeReadSerializer(serializers.ModelSerializer):
         read_only=True,
         source='recipeingredient_set',
     )
+    image = serializers.URLField(source='image.url')
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 

@@ -9,7 +9,9 @@ DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.getenv('DJANGO_HOSTS', '127.0.0.1,localhost').split(',')
 
-CSRF_TRUSTED_ORIGINS = os.getenv('DJANGO_CSRF', '').split(',')
+CSRF_TRUSTED_ORIGINS = [
+    url for url in os.getenv('DJANGO_CSRF', '').split(',') if url
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
