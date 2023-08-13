@@ -63,5 +63,4 @@ class RecipeAdmin(admin.ModelAdmin):
     @admin.display(description='Ингредиенты')
     def list_ingredients(self, recipe):
         names = recipe.ingredients.values_list('name', flat=True)
-        print(names)
         return '; '.join(names)
