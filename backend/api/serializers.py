@@ -94,11 +94,11 @@ class RecipeReadSerializer(serializers.ModelSerializer):
 
     def get_is_favorited(self, obj):
         user = self.context['request'].user
-        return obj.favorited_by.contains(user)
+        return user.is_authenticated and obj.favorited_by.contains(user)
 
     def get_is_in_shopping_cart(self, obj):
         user = self.context['request'].user
-        return obj.in_shopping_cart.contains(user)
+        return user.is_authenticated and obj.in_shopping_cart.contains(user)
 
 
 class Base64ImageField(serializers.ImageField):
