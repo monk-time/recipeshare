@@ -13,7 +13,7 @@ User = get_user_model()
 
 class UserFollowSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.SerializerMethodField()
+    recipes_count = serializers.ReadOnlyField(source='recipes.count')
 
     class Meta:
         model = User
@@ -30,9 +30,6 @@ class UserFollowSerializer(UserSerializer):
             queryset = queryset[:recipes_limit]
         serializer = RecipeMiniSerializer(queryset, many=True, read_only=True)
         return serializer.data
-
-    def get_recipes_count(self, obj):
-        return obj.recipes.count()
 
 
 class RecipeMiniSerializer(serializers.ModelSerializer):
