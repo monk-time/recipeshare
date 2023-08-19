@@ -6,6 +6,7 @@ import pytest
 class TestUsers:
     url_create_token = '/api/auth/token/login/'
     url_delete_token = '/api/auth/token/logout/'
+    url_create_user = '/api/users/'
 
     def test_create_auth_token_with_valid_data(self, client, user, user_token):
         url = self.url_create_token
@@ -48,11 +49,100 @@ class TestUsers:
         url = self.url_delete_token
         response = user_client.post(url)
         assert response.status_code == HTTPStatus.NO_CONTENT, (
-            f'POST-запрос на {url} залогиненного пользователя '
+            f'POST-запрос на `{url}` авторизованного пользователя '
             'должен возвращать статус 204.'
         )
         response = client.post(url)
         assert response.status_code == HTTPStatus.UNAUTHORIZED, (
-            f'POST-запрос на {url} анонимного пользователя '
+            f'POST-запрос на `{url}` анонимного пользователя '
             'должен возвращать статус 401.'
         )
+
+    def test_create_user_no_data(self, client):
+        url = self.url_create_user
+        response = client.post(url)
+        assert (
+            response.status_code != HTTPStatus.NOT_FOUND
+        ), f'Эндпоинт `{url}` не найден.'
+        assert response.status_code == HTTPStatus.BAD_REQUEST, (
+            f'POST-запрос на `{url}` без необходимых данных '
+            'должен возвращать ответ со статусом 400.'
+        )
+        response_json = response.json()
+        empty_fields = (
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'password',
+        )
+        for field in empty_fields:
+            assert field in response_json and isinstance(
+                response_json[field], list
+            ), (
+                f'Ответ на POST-запрос к `{url}` без необходимых данных '
+                'должен возвращать информацию об обязательных полях.'
+            )
+        for field in response_json:
+            assert field in empty_fields, (
+                f'POST-запрос к `{url}` без необходимых данных'
+                'не должен требовать лишние поля.'
+            )
+
+    @pytest.mark.parametrize(
+        'invalid_data, invalid_fields',
+        (
+            (
+                {
+                    'email': 'invalid_email',
+                    'username': ' ',
+                    'password': '1234567',
+                    'first_name': 'John',
+                    'last_name': 'Smith',
+                },
+                ['email', 'username'],
+            ),
+            (
+                {
+                    'email': 'valid_email@test.com',
+                    'username': ' ',
+                    'password': '1234567',
+                    'first_name': 'John',
+                    'last_name': 'Smith',
+                },
+                ['username'],
+            ),
+            (
+                {
+                    'email': 'valid_email@test.com',
+                    'username': 'validusername',
+                    'password': '1234567',
+                },
+                ['first_name', 'last_name'],
+            ),
+        ),
+    )
+    def test_create_user_invalid_data(
+        self, invalid_data, invalid_fields, client, django_user_model
+    ):
+        url = self.url_create_user
+        users_count = django_user_model.objects.count()
+        response = client.post(url, data=invalid_data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, (
+            f'POST-запрос на `{url}` с некорректными данными '
+            'должен возвращать статус 400.'
+        )
+        assert users_count == django_user_model.objects.count(), (
+            f'POST-запрос на `{url}` с некорректными данными '
+            'не должен создавать нового пользователя.'
+        )
+
+        response_json = response.json()
+        for field in invalid_fields:
+            assert field in response_json and isinstance(
+                response_json[field], list
+            ), (
+                f'POST-запрос на `{url}` с некорректными данными '
+                'должен возвращать информацию о некорректных полях.'
+            )
