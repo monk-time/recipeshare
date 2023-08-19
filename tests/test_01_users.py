@@ -100,7 +100,7 @@ class TestUsers:
                     'first_name': 'John',
                     'last_name': 'Smith',
                 },
-                ['email', 'username'],
+                ('email', 'username'),
             ),
             (
                 {
@@ -110,15 +110,15 @@ class TestUsers:
                     'first_name': 'John',
                     'last_name': 'Smith',
                 },
-                ['username'],
+                ('username',),
             ),
             (
                 {
                     'email': 'valid_email@test.com',
-                    'username': 'validusername',
+                    'username': 'valid_username',
                     'password': '1234567',
                 },
-                ['first_name', 'last_name'],
+                ('first_name', 'last_name'),
             ),
         ),
     )
@@ -140,6 +140,42 @@ class TestUsers:
 
         response_json = response.json()
         for field in invalid_fields:
+            assert field in response_json and isinstance(
+                response_json[field], list
+            ), (
+                f'POST-запрос на `{url}` с некорректными данными '
+                'должен возвращать информацию о некорректных полях.'
+            )
+
+    @pytest.mark.parametrize(
+        'duplicate_data, duplicate_fields',
+        (
+            ({'email': 'valid_email@test.com'}, ('username',)),
+            ({'username': 'valid_username'}, ('email',)),
+        ),
+    )
+    def test_create_user_duplicate_data(
+        self, duplicate_data, duplicate_fields, client, django_user_model, user
+    ):
+        url = self.url_create_user
+        keys = ['username', 'email', 'first_name', 'last_name', 'password']
+        invalid_data = {
+            key: getattr(user, key) for key in keys
+        } | duplicate_data
+        users_count = django_user_model.objects.count()
+        response = client.post(url, data=invalid_data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST, (
+            f'POST-запрос на `{url}` с некорректными данными '
+            'должен возвращать статус 400.'
+        )
+        assert users_count == django_user_model.objects.count(), (
+            f'POST-запрос на `{url}` с некорректными данными '
+            'не должен создавать нового пользователя.'
+        )
+
+        response_json = response.json()
+        for field in duplicate_fields:
             assert field in response_json and isinstance(
                 response_json[field], list
             ), (
