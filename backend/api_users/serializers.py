@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from djoser import serializers as djoser_serializers
 from rest_framework import serializers
@@ -19,6 +20,14 @@ class UserCreateSerializer(djoser_serializers.UserCreateSerializer):
             'password',
         )
         read_only_fields = ('id',)
+
+    def validate_password(self, password):
+        if len(password) > settings.MAX_LENGTH_PASSWORD:
+            raise serializers.ValidationError(
+                'Пароль должен иметь не более '
+                f'{settings.MAX_LENGTH_PASSWORD} символов.'
+            )
+        return password
 
 
 class UserSerializer(djoser_serializers.UserSerializer):
