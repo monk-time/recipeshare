@@ -1,6 +1,8 @@
 from http import HTTPStatus
 import pytest
 
+from tests.utils import invalid_data_for_user
+
 
 @pytest.mark.django_db(transaction=True)
 class TestUsers:
@@ -90,37 +92,7 @@ class TestUsers:
             )
 
     @pytest.mark.parametrize(
-        'invalid_data, invalid_fields',
-        (
-            (
-                {
-                    'email': 'invalid_email',
-                    'username': ' ',
-                    'password': '1234567',
-                    'first_name': 'John',
-                    'last_name': 'Smith',
-                },
-                ('email', 'username'),
-            ),
-            (
-                {
-                    'email': 'valid_email@test.com',
-                    'username': ' ',
-                    'password': '1234567',
-                    'first_name': 'John',
-                    'last_name': 'Smith',
-                },
-                ('username',),
-            ),
-            (
-                {
-                    'email': 'valid_email@test.com',
-                    'username': 'valid_username',
-                    'password': '1234567',
-                },
-                ('first_name', 'last_name'),
-            ),
-        ),
+        'invalid_data, invalid_fields', invalid_data_for_user
     )
     def test_create_user_invalid_data(
         self, invalid_data, invalid_fields, client, django_user_model
@@ -182,3 +154,26 @@ class TestUsers:
                 f'POST-запрос на `{url}` с некорректными данными '
                 'должен возвращать информацию о некорректных полях.'
             )
+
+    def test_create_user_valid_data(self, client, django_user_model):
+        url = self.url_create_user
+        valid_data = {
+            'email': 'valid_email@test.com',
+            'username': 'valid_username',
+            'password': 'valid_password',
+            'first_name': 'John',
+            'last_name': 'Smith',
+        }
+        users_count = django_user_model.objects.count()
+        response = client.post(url, data=valid_data)
+
+        assert response.status_code == HTTPStatus.CREATED, (
+            f'POST-запрос на `{url}` с корректными данными '
+            'должен возвращать статус 201.'
+        )
+        new_users_count = django_user_model.objects.count()
+        new_user = django_user_model.objects.filter(email=valid_data['email'])
+        assert new_users_count == users_count + 1 and new_user.exists(), (
+            f'POST-запрос на `{url}` с корректными данными '
+            'должен создавать нового пользователя.'
+        )
