@@ -17,3 +17,4 @@ required_plugins = ["pytest-django", "pytest-env"]
 DJANGO_SETTINGS_MODULE = "foodgram.settings"
 env = ["DJANGO_USE_SQLITE=True"]
 addopts = "-vv -p no:cacheprovider"
+disable_test_id_escaping_and_forfeit_all_rights_to_community_support = true

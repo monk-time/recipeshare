@@ -1,14 +1,14 @@
 from http import HTTPStatus
 import pytest
 
-from tests.utils import invalid_data_for_user
+from tests.utils import check_pagination, invalid_data_for_user
 
 
 @pytest.mark.django_db(transaction=True)
 class TestUsers:
     url_create_token = '/api/auth/token/login/'
     url_delete_token = '/api/auth/token/logout/'
-    url_create_user = '/api/users/'
+    url_users = '/api/users/'
 
     def test_create_auth_token_with_valid_data(self, client, user, user_token):
         url = self.url_create_token
@@ -51,17 +51,17 @@ class TestUsers:
         url = self.url_delete_token
         response = user_client.post(url)
         assert response.status_code == HTTPStatus.NO_CONTENT, (
-            f'POST-запрос на `{url}` авторизованного пользователя '
+            f'POST-запрос на `{url}` от авторизованного пользователя '
             'должен возвращать статус 204.'
         )
         response = client.post(url)
         assert response.status_code == HTTPStatus.UNAUTHORIZED, (
-            f'POST-запрос на `{url}` анонимного пользователя '
+            f'POST-запрос на `{url}` от анонимного пользователя '
             'должен возвращать статус 401.'
         )
 
     def test_create_user_no_data(self, client):
-        url = self.url_create_user
+        url = self.url_users
         response = client.post(url)
         assert (
             response.status_code != HTTPStatus.NOT_FOUND
@@ -97,7 +97,7 @@ class TestUsers:
     def test_create_user_invalid_data(
         self, invalid_data, invalid_fields, client, django_user_model
     ):
-        url = self.url_create_user
+        url = self.url_users
         users_count = django_user_model.objects.count()
         response = client.post(url, data=invalid_data)
 
@@ -129,7 +129,7 @@ class TestUsers:
     def test_create_user_duplicate_data(
         self, duplicate_data, duplicate_fields, client, django_user_model, user
     ):
-        url = self.url_create_user
+        url = self.url_users
         keys = ['username', 'email', 'first_name', 'last_name', 'password']
         invalid_data = {
             key: getattr(user, key) for key in keys
@@ -156,7 +156,7 @@ class TestUsers:
             )
 
     def test_create_user_valid_data(self, client, django_user_model):
-        url = self.url_create_user
+        url = self.url_users
         valid_data = {
             'email': 'valid_email@test.com',
             'username': 'valid_username',
@@ -172,8 +172,39 @@ class TestUsers:
             'должен возвращать статус 201.'
         )
         new_users_count = django_user_model.objects.count()
-        new_user = django_user_model.objects.filter(email=valid_data['email'])
+        valid_data.pop('password')
+        new_user = django_user_model.objects.filter(**valid_data)
         assert new_users_count == users_count + 1 and new_user.exists(), (
             f'POST-запрос на `{url}` с корректными данными '
             'должен создавать нового пользователя.'
         )
+
+        data = response.json()
+        assert 'id' in data, (
+            f'Ответ на POST-запрос на `{url}` с корректными данными '
+            'должен содержать ключ `id`.'
+        )
+        data.pop('id')
+        assert valid_data == data, (
+            f'Ответ на POST-запрос на `{url}` с корректными данными '
+            'содержит некорректные данные.'
+        )
+
+    @pytest.mark.parametrize(
+        'client_fixture, msg',
+        (
+            ('client', 'от анонимного пользователя'),
+            ('user_client', 'от зарегистрированного пользователя'),
+            ('user_client', 'от зарегистрированного пользователя'),
+        ),
+    )
+    def test_read_users(self, client_fixture, msg, request, user, user_2):
+        url = self.url_users
+        client = request.getfixturevalue(client_fixture)
+        response = client.get(url)
+        assert (
+            response.status_code == HTTPStatus.OK
+        ), f'GET-запрос на `{url} {msg} должен возвращать статус 200.'
+
+        data = response.json()
+        check_pagination(url, data, 2)
