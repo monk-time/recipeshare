@@ -1,0 +1,37 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Django: Attach to Docker Compose",
+            "type": "python",
+            "request": "attach",
+            "connect": {
+                "host": "localhost",
+                "port": 5678
+            },
+            "pathMappings": [
+                {
+                    "localRoot": "${workspaceFolder}\\backend",
+                    "remoteRoot": "."
+                }
+            ],
+            "justMyCode": false
+        },
+        {
+            "name": "Django: runserver",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}\\backend\\manage.py",
+            "args": [
+                "runserver",
+                "127.0.0.1:10000"
+            ],
+            "env": {
+                "DJANGO_DEBUG": "True",
+                "DJANGO_USE_SQLITE": "True"
+            },
+            "django": true,
+            "justMyCode": false
+        }
+    ]
+}
