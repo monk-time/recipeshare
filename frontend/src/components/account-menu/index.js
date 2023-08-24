@@ -2,10 +2,11 @@ import cn from 'classnames'
 import styles from './styles.module.css'
 import { useContext } from 'react'
 import { Button, LinkComponent } from '../index.js'
-import { AuthContext } from '../../contexts'
+import { AuthContext, UserContext } from '../../contexts'
 
 const AccountMenu = ({ onSignOut }) => {
   const authContext = useContext(AuthContext)
+  const userContext = useContext(UserContext)
   if (!authContext) {
     return <div className={styles.menu}>
       <LinkComponent
@@ -21,6 +22,11 @@ const AccountMenu = ({ onSignOut }) => {
     </div>
   }
   return <div className={styles.menu}>
+    <LinkComponent
+      className={styles.menuLink}
+      href={`/user/${(userContext || {}).id}`}
+      title='Профиль'
+    />
     <LinkComponent
       className={styles.menuLink}
       href='/change-password'
