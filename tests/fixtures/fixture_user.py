@@ -1,6 +1,8 @@
 import pytest
 from rest_framework.test import APIClient
 
+from users.models import Follow
+
 
 @pytest.fixture
 def superuser(django_user_model):
@@ -73,3 +75,8 @@ def user_client(user_token):
         HTTP_AUTHORIZATION=f'Token {user_token["auth_token"]}',
     )
     return client
+
+
+@pytest.fixture
+def follow_user_to_user_2(user, user_2):
+    return Follow.objects.create(follower=user, following=user_2)

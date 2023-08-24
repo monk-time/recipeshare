@@ -76,3 +76,19 @@ def check_pagination(
             f'На `{url}` должна быть пагинация. '
             'Значение параметра `results` отсутствует или некорректно.'
         )
+
+
+def check_user_fields(response_data: dict, url: str, msg: str):
+    fields = (
+        'id',
+        'email',
+        'username',
+        'first_name',
+        'last_name',
+        'is_subscribed',
+    )
+    for field in fields:
+        assert field in response_data, (
+            f'Ответ на GET-запрос на `{url}` {msg} должен содержать '
+            f'поле `{field}` в объекте пользователей.'
+        )

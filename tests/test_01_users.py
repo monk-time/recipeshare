@@ -1,7 +1,11 @@
 from http import HTTPStatus
 import pytest
 
-from tests.utils import check_pagination, invalid_data_for_user
+from tests.utils import (
+    check_pagination,
+    check_user_fields,
+    invalid_data_for_user,
+)
 
 
 @pytest.mark.django_db(transaction=True)
@@ -9,6 +13,8 @@ class TestUsers:
     url_create_token = '/api/auth/token/login/'
     url_delete_token = '/api/auth/token/logout/'
     url_users = '/api/users/'
+    url_user_me = '/api/users/me/'
+    url_reset_password = '/api/users/set_password/'
 
     def test_create_auth_token_with_valid_data(self, client, user, user_token):
         url = self.url_create_token
@@ -179,13 +185,13 @@ class TestUsers:
             'должен создавать нового пользователя.'
         )
 
-        data = response.json()
-        assert 'id' in data, (
+        response_data = response.json()
+        assert 'id' in response_data, (
             f'Ответ на POST-запрос на `{url}` с корректными данными '
             'должен содержать ключ `id`.'
         )
-        data.pop('id')
-        assert valid_data == data, (
+        response_data.pop('id')
+        assert valid_data == response_data, (
             f'Ответ на POST-запрос на `{url}` с корректными данными '
             'содержит некорректные данные.'
         )
@@ -195,7 +201,6 @@ class TestUsers:
         (
             ('client', 'от анонимного пользователя'),
             ('user_client', 'от зарегистрированного пользователя'),
-            ('user_client', 'от зарегистрированного пользователя'),
         ),
     )
     def test_read_users(self, client_fixture, msg, request, user, user_2):
@@ -204,7 +209,67 @@ class TestUsers:
         response = client.get(url)
         assert (
             response.status_code == HTTPStatus.OK
-        ), f'GET-запрос на `{url} {msg} должен возвращать статус 200.'
+        ), f'GET-запрос на `{url}` {msg} должен возвращать статус 200.'
 
-        data = response.json()
-        check_pagination(url, data, 2)
+        response_data = response.json()
+        check_pagination(url, response_data, 2)
+        for data_user in response_data['results']:
+            check_user_fields(data_user, url, msg)
+
+    def test_read_user(
+        self,
+        client,
+        user_client,
+        user,
+        user_2,
+        superuser,
+        follow_user_to_user_2,
+    ):
+        url = f'{self.url_users}{user_2.id}/'
+        response = client.get(url)
+        assert response.status_code == HTTPStatus.UNAUTHORIZED, (
+            f'GET-запрос на `{url}` от анонимного пользователя '
+            'должен возвращать статус 401.'
+        )
+
+        response = user_client.get(url)
+        assert response.status_code == HTTPStatus.OK, (
+            f'GET-запрос на `{url}` от зарегистрированного пользователя '
+            'должен возвращать статус 200.'
+        )
+
+        response_data = response.json()
+        check_user_fields(
+            response_data, url, 'от зарегистрированного пользователя'
+        )
+        assert response_data['is_subscribed'] is True, (
+            f'Ответ на GET-запрос на `{url}` от подписанного пользователя '
+            'должен содержать поле `is_subscribed` со значением `True`'
+        )
+
+        url = f'{self.url_users}{superuser.id}/'
+        response = client.get(url)
+        assert response_data['is_subscribed'] is True, (
+            f'Ответ на GET-запрос на `{url}` от неподписанного пользователя '
+            'должен содержать поле `is_subscribed` со значением `False`'
+        )
+
+    def test_read_me(self, user_client, user):
+        url = f'{self.url_user_me}'
+        response = user_client.get(url)
+        assert response.status_code == HTTPStatus.OK, (
+            f'GET-запрос на `{url}` от зарегистрированного пользователя '
+            'должен возвращать статус 200.'
+        )
+
+    def test_reset_password(self, user_client):
+        url = self.url_reset_password
+        data = {
+            'new_password': 'new_valid_password',
+            'current_password': '1234567',
+        }
+        response = user_client.post(url, data=data)
+        assert response.status_code == HTTPStatus.NO_CONTENT, (
+            f'POST-запрос на `{url}` от зарегистрированного пользователя '
+            'должен возвращать статус 204.'
+        )
