@@ -13,6 +13,7 @@ class TestUsers:
     url_create_token = '/api/auth/token/login/'
     url_delete_token = '/api/auth/token/logout/'
     url_users = '/api/users/'
+    url_user = '/api/users/{id}/'
     url_user_me = '/api/users/me/'
     url_reset_password = '/api/users/set_password/'
 
@@ -225,7 +226,7 @@ class TestUsers:
         superuser,
         follow_user_to_user_2,
     ):
-        url = f'{self.url_users}{user_2.id}/'
+        url = self.url_user.format(id=user_2.id)
         response = client.get(url)
         assert response.status_code == HTTPStatus.UNAUTHORIZED, (
             f'GET-запрос на `{url}` от анонимного пользователя '
