@@ -249,8 +249,9 @@ class TestUsers:
         )
 
         url = f'{self.url_users}{superuser.id}/'
-        response = client.get(url)
-        assert response_data['is_subscribed'] is True, (
+        response = user_client.get(url)
+        response_data = response.json()
+        assert response_data['is_subscribed'] is False, (
             f'Ответ на GET-запрос на `{url}` от неподписанного пользователя '
             'должен содержать поле `is_subscribed` со значением `False`'
         )
