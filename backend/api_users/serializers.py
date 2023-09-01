@@ -3,8 +3,6 @@ from django.contrib.auth import get_user_model
 from djoser import serializers as djoser_serializers
 from rest_framework import serializers
 
-from users.models import Follow
-
 User = get_user_model()
 
 
@@ -48,7 +46,5 @@ class UserSerializer(djoser_serializers.UserSerializer):
         current_user = self.context['request'].user  # type: ignore
         return (
             current_user.is_authenticated
-            and Follow.objects.filter(
-                follower=current_user, following=obj
-            ).exists()
+            and obj.following.filter(follower=current_user).exists()
         )
