@@ -137,6 +137,14 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
+    def validate_tags(self, tags):
+        if not tags:
+            raise serializers.ValidationError('Укажите хотя бы один тег.')
+        unique_tags = set(tag.id for tag in tags)
+        if len(tags) != len(unique_tags):
+            raise serializers.ValidationError('Теги не должны повторяться.')
+        return tags
+
     def validate_ingredients(self, ingredients):
         if not ingredients:
             raise serializers.ValidationError(
